@@ -168,7 +168,35 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        # raise NotImplementedError("Need to implement for Task 3.1")
+
+        # do not index if stride aligned: defined as if strides and shapes
+        # are equal: https://edstem.org/us/courses/62856/discussion/5684711
+        # NOTE: in tensor_data.py, we can see that shape and strides are
+        # aliases for npt.NDArray, which means that they are numpy arrays.
+        # to compare equality, we can use np.array_equal
+        if np.array_equal(out_strides, in_strides) and np.array_equal(
+            out_shape, in_shape
+        ):
+            for i in prange(len(out)):
+                out[i] = fn(in_storage[i])
+        else:
+            # otherwise, index
+            # convert for loop to use prange for parallelization
+            for i in prange(len(out)):
+                # use numpy buffers: initialize indices by allocating numpy arrays
+                # without initilizing entries.
+                # https://edstem.org/us/courses/62856/discussion/5698267
+                out_index: Index = np.empty(MAX_DIMS, np.int32)
+                in_index: Index = np.empty(MAX_DIMS, np.int32)
+
+                # # proceed with regular indexing
+                to_index(i, out_shape, out_index)
+                broadcast_index(out_index, out_shape, in_shape, in_index)
+                o = index_to_position(out_index, out_strides)
+                j = index_to_position(in_index, in_strides)
+                out[o] = fn(in_storage[j])
 
     return njit(_map, parallel=True)  # type: ignore
 
@@ -207,7 +235,32 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        # raise NotImplementedError("Need to implement for Task 3.1")
+
+        # check if stride aligned
+        if (
+            np.array_equal(out_strides, a_strides)
+            and np.array_equal(out_strides, b_strides)
+            and np.array_equal(out_shape, a_shape)
+            and np.array_equal(out_shape, b_shape)
+        ):
+            for i in prange(len(out)):
+                out[i] = fn(a_storage[i], b_storage[i])
+        else:
+            # otherwise, index
+            # parallelize main loop
+            for i in prange(len(out)):
+                out_index: Index = np.zeros(MAX_DIMS, np.int32)
+                a_index: Index = np.zeros(MAX_DIMS, np.int32)
+                b_index: Index = np.zeros(MAX_DIMS, np.int32)
+                to_index(i, out_shape, out_index)
+                o = index_to_position(out_index, out_strides)
+                broadcast_index(out_index, out_shape, a_shape, a_index)
+                j = index_to_position(a_index, a_strides)
+                broadcast_index(out_index, out_shape, b_shape, b_index)
+                k = index_to_position(b_index, b_strides)
+                out[o] = fn(a_storage[j], b_storage[k])
 
     return njit(_zip, parallel=True)  # type: ignore
 
@@ -242,7 +295,21 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        # raise NotImplementedError("Need to implement for Task 3.1")
+
+        # for reduce, the main loop is parallelized, not the inner loop
+        reduce_size = a_shape[reduce_dim]
+        for i in prange(len(out)):
+            # numpy buffer
+            out_index: Index = np.zeros(MAX_DIMS, np.int32)
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            # we need to modify inner loop to avoid function calls
+            for j in range(reduce_size):
+                out_index[reduce_dim] = j
+                a = index_to_position(out_index, a_strides)
+                out[o] = fn(out[o], a_storage[a])
 
     return njit(_reduce, parallel=True)  # type: ignore
 
@@ -293,7 +360,68 @@ def _tensor_matrix_multiply(
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # TODO: Implement for Task 3.2.
+    # raise NotImplementedError("Need to implement for Task 3.2")
+
+    assert a_shape[-1] == b_shape[-2]
+
+    # we are not allowed to use index buffers or functions
+    # to get indexes
+    # we will need to use strides and shapes to get the correct data
+    # from the storage
+
+    # KEY: here, we working matrix multiplication, so we can assume
+    # both a and b are of dimension 2.
+
+    # we iterate for each batch. In this case, the batch should be
+    # the first stride, because here we assume dim-2 tensors.
+    # and a batch is the rows.
+    for batch in prange(out_shape[0]):
+        # the `batch` in this case tells us: in the `out` tensor's storage,
+        # which "segment" of storage we are working with.
+
+        # for each row of a:
+        for arow in range(a_shape[-2]):
+            # for each column of b
+            for bcol in range(b_shape[-1]):
+                # now we need to find the correct values to use in
+                # a_storage and b_storage to multiply and sum.
+                # what information do we have? we have:
+                # the batch
+                # a's row number
+                # b's column number
+                # then, we need to first move to the correct storage position
+                # that fits the current batch
+
+                a_position_in_storage = a_batch_stride * batch + arow * a_strides[-2]
+                b_position_in_storage = b_batch_stride * batch + bcol * b_strides[-1]
+
+                # compute where to store the position in out
+                out_storage_position = (
+                    batch * out_strides[0]
+                    + arow * out_strides[-2]
+                    + bcol * out_strides[-1]
+                )
+
+                # now that we have the base storage position, for each row col
+                # in
+                dot_prod_running_sum = 0.0
+
+                # above, in for arow in range(a_shape[-2]), we iterated
+                # over the rows of a, now, we iterate over the columns of a
+                # so that we can do the dot product.
+                for acol in range(a_shape[-1]):
+                    dot_prod_running_sum += (
+                        a_storage[a_position_in_storage]
+                        * b_storage[b_position_in_storage]
+                    )
+                    # iterate position using strides. Since we are moving
+                    # over the columns (in a), and rows in b we need to adjust
+                    # the positions in storage, as defined by the strides.
+                    a_position_in_storage += a_strides[-1]
+                    b_position_in_storage += b_strides[-2]
+
+                out[out_storage_position] = dot_prod_running_sum
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)

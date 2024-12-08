@@ -261,7 +261,51 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        # raise NotImplementedError("Need to implement for Task 2.3")
+
+        #     # out index is a 0 array of size out_shape
+        #     out_index = np.zeros(len(out_shape), dtype=int)
+        #     in_index = np.zeros(len(in_shape), dtype=int)
+
+        #     # here, we test that out is equalt to the size of
+        #     # the out tensor.
+        #     assert len(out) == int(np.prod(out_shape)), (
+        #         "len(out_shape) is "
+        #         + str(len(out_shape))
+        #         + "and np.prod(out_shape) is "
+        #         + str(np.prod(out_shape))
+        #     )
+
+        #     # broadcasted case: if we assume out_shape and in_shape broadcast,
+        #     # then we can get every element in out_shape from the in_shape.
+        #     # to do this, we start with the in_shape. Then for each
+        #     # element in `out`, which is the 1D array of out_shape,
+        #     # we get the corresponding index in `in_storage`, the 1D array
+        #     # of in_shape. Then we apply the function to the element at the
+        #     # # index in the in_storage and save it to the out.
+        #     # for each element in the 1D array of out_shape (i.e. = size)
+        #     for i in range(len(out)):
+        #         # get the index in the out_shape
+        #         to_index(i, out_shape, out_index)
+        #         # get the index in the in_shape (which is SMALLER)
+        #         broadcast_index(out_index, out_shape, in_shape, in_index)
+        #         # get the position in the in_storage
+        #         in_position = index_to_position(in_index, in_strides)
+        #         # get the position in the out storage. i.e. where to store
+        #         out_position = index_to_position(out_index, out_strides)
+        #         # apply the function to the in_storage and save it to the out
+        #         out[out_position] = fn(in_storage[in_position])
+
+        # return _map
+        out_index: Index = np.zeros(MAX_DIMS, np.int16)
+        in_index: Index = np.zeros(MAX_DIMS, np.int16)
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            o = index_to_position(out_index, out_strides)
+            j = index_to_position(in_index, in_strides)
+            out[o] = fn(in_storage[j])
 
     return _map
 
@@ -305,7 +349,44 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        # raise NotImplementedError("Need to implement for Task 2.3")
+
+        #     # out index is a 0 array of size out_shape
+        #     out_index = np.zeros(len(out_shape), dtype=int)
+        #     a_index = np.zeros(len(a_shape), dtype=int)
+        #     b_index = np.zeros(len(b_shape), dtype=int)
+
+        #     # for each element in out (1D array of out_shape)
+        #     for i in range(len(out)):
+        #         # get the index in the out_shape
+        #         to_index(i, out_shape, out_index)
+        #         # get the index in the a_shape (which is SMALLER)
+        #         broadcast_index(out_index, out_shape, a_shape, a_index)
+        #         # get the index in the b_shape (which is SMALLER)
+        #         broadcast_index(out_index, out_shape, b_shape, b_index)
+        #         # get the position in the a_storage
+        #         a_position = index_to_position(a_index, a_strides)
+        #         # get the position in the b_storage
+        #         b_position = index_to_position(b_index, b_strides)
+
+        #         out_position = index_to_position(out_index, out_strides)
+        #         # apply the function to the a_storage and b_storage and save it to
+        #         out[out_position] = fn(a_storage[a_position], b_storage[b_position])
+
+        # return _zip
+        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+        a_index: Index = np.zeros(MAX_DIMS, np.int32)
+        b_index: Index = np.zeros(MAX_DIMS, np.int32)
+
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            j = index_to_position(a_index, a_strides)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            k = index_to_position(b_index, b_strides)
+            out[o] = fn(a_storage[j], b_storage[k])
 
     return _zip
 
@@ -335,7 +416,41 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 2.3.
+        # raise NotImplementedError("Need to implement for Task 2.3")
+
+        #     out_index = np.zeros(len(out_shape), dtype=int)
+        #     a_index = np.zeros(len(a_shape), dtype=int)
+
+        #     # reduce is a bit trickier. out_shape will have the same number of
+        #     # dimensions, but the size of the dimension == reduce_dim will be 1.
+        #     for i in range(len(out)):
+        #         # get the index in the out_shape
+        #         to_index(i, out_shape, out_index)
+        #         # translate the out index to the index in a_shape
+        #         broadcast_index(out_index, out_shape, a_shape, a_index)
+        #         a_position = index_to_position(a_index, a_strides)
+        #         out_position = index_to_position(out_index, out_strides)
+
+        #         # for each element in the reduce_dim, apply the function,
+        #         # and accumulate the value.
+        #         for j in range(a_shape[reduce_dim]):
+        #             # get the index in the a_shape
+        #             a_index[reduce_dim] = j
+        #             a_position = index_to_position(a_index, a_strides)
+        #             out[out_position] = fn(out[out_position], a_storage[a_position])
+
+        # TODO: NEED TO FIX OPTIMIZATIONS
+        # return _reduce
+        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+        reduce_size = a_shape[reduce_dim]
+        for i in range(len(out)):
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            for j in range(reduce_size):
+                out_index[reduce_dim] = j
+                a = index_to_position(out_index, a_strides)
+                out[o] = fn(out[o], a_storage[a])
 
     return _reduce
 

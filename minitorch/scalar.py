@@ -116,7 +116,6 @@ class Scalar:
 
     @property
     def parents(self) -> Iterable[Variable]:
-        """Get the variables used to create this one."""
         assert self.history is not None
         return self.history.inputs
 
@@ -126,7 +125,25 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 1.3.
+
+        # pass the last functiona a context with d:
+        gradients = h.last_fn._backward(h.ctx, d_output)
+
+        # note h.inputs are the inputs to the last function
+        # when its forward method was called
+        # so we need to pair the gradients with the inputs
+
+        # Iterate over the inputs and the corresponding gradients
+        # logic:
+        # For each input and its corresponding gradient (grad),
+        # the function yields a tuple (inp, grad).
+        # for inp, grad in zip(h.inputs, gradients):
+        #     yield inp, grad
+
+        # try returning the input to the last fn
+        # and the partial derivs of the last function
+        return list(zip(h.inputs, gradients))
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
@@ -141,7 +158,42 @@ class Scalar:
             d_output = 1.0
         backpropagate(self, d_output)
 
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # TODO: Implement for Task 1.2.
+    def __lt__(self, b: ScalarLike) -> Scalar:
+        return LT.apply(self, b)
+
+    def __gt__(self, b: ScalarLike) -> Scalar:
+        return LT.apply(b, self)
+
+    def __sub__(self, b: ScalarLike) -> Scalar:
+        # subtract(a, b) = add(a, neg(b))
+        # symbolically, a + (-b)
+        # return Add.apply(self, Neg.apply(b))
+        # if we use the above, we get AssertionError: Expected return type float got <class 'int'>
+        # it may be because we can't use Neg.apply(b) directly. Why?
+        # return Neg.apply(Add.apply(Neg.apply(self), b))
+        return Add.apply(self, -b)
+
+    def __neg__(self) -> Scalar:
+        return Neg.apply(self)
+
+    def __add__(self, b: ScalarLike) -> Scalar:
+        return Add.apply(self, b)
+
+    def __eq__(self, b: ScalarLike) -> Scalar:
+        return EQ.apply(self, b)
+
+    def log(self) -> Scalar:
+        return Log.apply(self)
+
+    def exp(self) -> Scalar:
+        return Exp.apply(self)
+
+    def sigmoid(self) -> Scalar:
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Scalar:
+        return ReLU.apply(self)
 
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
