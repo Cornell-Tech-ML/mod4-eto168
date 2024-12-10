@@ -30,26 +30,65 @@ class Module:
         return list(m.values())
 
     def train(self) -> None:
-        """Set the mode of this module and all descendent modules to `train`."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Set the `training` flag of this and descendent to true."""
+        # TODO: Implement for Task 0.4.
+        for m in self.modules():
+            m.train()
+
+        self.training = True
 
     def eval(self) -> None:
-        """Set the mode of this module and all descendent modules to `eval`."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Set the `training` flag of this and descendent to false."""
+        # TODO: Implement for Task 0.4.
+        for m in self.modules():
+            m.eval()
+
+        self.training = False
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """Collect all the parameters of this module and its descendents.
+
+        This is an example output:
+
+            [('parameter1', 15),
+            ('cool_parameter', 50),
+            ('sub_module_a.uncool_parameter', 60),
+            ('sub_module_b.uncool_parameter', 60)]
+
+        Adding logic: from above, we can see that the output is a list of
+        tuples, where each tuple contains the name of the parameter and the
+        parameter itself.
+
+        Importantly, notice that the first set of parameters, parameter1 and
+        cool_parameter, do not have the current module name. Rather, only the
+        submodules have the current module name as a prefix.
+
+        This is important to note because it means that we need to add the
+        current module name as a prefix only in recursive calls to the child
+        modules.
 
         Returns
         -------
             The name and `Parameter` of each ancestor parameter.
 
         """
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 0.4.
+        parameters = {}
+        for k, v in self._parameters.items():
+            parameters[k] = v
+
+        # recurse down to children submodules:
+        for mod_name, m in self._modules.items():
+            for k, v in m.named_parameters():
+                parameters[f"{mod_name}.{k}"] = v
+
+        return list(parameters.items())
 
     def parameters(self) -> Sequence[Parameter]:
         """Enumerate over all the parameters of this module and its descendents."""
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 0.4.
+
+        return [j for _, j in self.named_parameters()]
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """Manually add a parameter. Useful helper for scalar parameters.
@@ -85,6 +124,13 @@ class Module:
         return None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Allow an instance of a class to be called as if it were a function.
+
+        Returns
+        -------
+            Any: _description_
+
+        """
         return self.forward(*args, **kwargs)
 
     def __repr__(self) -> str:
@@ -113,6 +159,23 @@ class Module:
 
         main_str += ")"
         return main_str
+
+    # define new function to append prefix
+    def add_module_prefix(
+        self, name_param_tuple: Tuple[str, Parameter], prefix_module_attr_name: str
+    ) -> Tuple[str, Parameter]:
+        """Add the current module's name as a prefix to the parameter name.
+
+        Where the parameter name is the first element:
+
+        Example: ('p1', 5) --> ('module_name.p1', 5)
+        """
+        prefix = prefix_module_attr_name
+        named_param_list = list(name_param_tuple)
+        named_param_list[0] = prefix + "." + named_param_list[0]
+        name_param_tuple = (named_param_list[0], named_param_list[1])
+
+        return name_param_tuple
 
 
 class Parameter:

@@ -10,8 +10,21 @@ import minitorch
 
 class Network(minitorch.Module):
     def __init__(self, hidden_layers):
+        """Initialize a Neural Network
+
+        Here, we simply choose what layers to add to our NN.
+
+        the forward() method has the logic for the forward pass of the network,
+        and has listed 3 layers. Thus, we need to have 3 layers.
+        """
         super().__init__()
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 1.5.
+
+        # 2 inputs, `hidden_layers` number of hidden layer neurons,
+        # and 1 output (the final prediction)
+        self.layer1 = Linear(2, hidden_layers)
+        self.layer2 = Linear(hidden_layers, hidden_layers)
+        self.layer3 = Linear(hidden_layers, 1)
 
     def forward(self, x):
         middle = [h.relu() for h in self.layer1.forward(x)]
@@ -21,6 +34,29 @@ class Network(minitorch.Module):
 
 class Linear(minitorch.Module):
     def __init__(self, in_size, out_size):
+        """Initialize a Linear Layer
+
+        Initialize a linear layer in a neural network. A linear layer
+        is fully connected. That is, every input neuron is connected to
+        every output neuron.
+
+        For docs please see: https://docs.nvidia.com/deeplearning/performance/dl-performance-fully-connected/index.html
+
+        Logic of this function (this code was implemented by the instructors).
+
+        For every input neuron, we create an empty list of weights, and then
+        for every output neuron, we add a weight to the list. We do this
+        because a linear layer is fully connected, and each connection
+        has a weight.
+
+        We also add a bias term for each output neuron. Thus, for every output
+        neuron, we append a bias parameter (this bias parameter is the same
+        for every output neuron in this layer).
+
+        Args:
+            in_size (_type_): the number of input neurons
+            out_size (_type_): the number of output neurons
+        """
         super().__init__()
         self.weights = []
         self.bias = []
@@ -40,7 +76,26 @@ class Linear(minitorch.Module):
             )
 
     def forward(self, inputs):
-        raise NotImplementedError("Need to include this file from past assignment.")
+        """Forward step for a linear layer
+
+        For a linear layer, we move forward by taking the dot product of the
+        input and the weights, and then adding the bias,
+        for each output neuron.
+
+        That is, for each output neuron, we take the dot product of the input
+        and the weights, and then add the bias.
+
+        We return a list of the values for each output neuron.
+
+        Args:
+            inputs (_type_): _description_
+        """
+        # TODO: Implement for Task 1.5.
+        y = [b.value for b in self.bias]
+        for i, x in enumerate(inputs):
+            for j in range(len(y)):
+                y[j] = y[j] + x * self.weights[i][j].value
+        return y
 
 
 def default_log_fn(epoch, total_loss, correct, losses):
@@ -99,8 +154,13 @@ class ScalarTrain:
 
 
 if __name__ == "__main__":
+    # defualts
     PTS = 50
     HIDDEN = 2
     RATE = 0.5
+
+    # PTS = 50
+    # HIDDEN = 10
+    # RATE = 0.001
     data = minitorch.datasets["Simple"](PTS)
     ScalarTrain(HIDDEN).train(data, RATE)
