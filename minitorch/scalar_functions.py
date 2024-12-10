@@ -90,3 +90,164 @@ class Log(ScalarFunction):
 # To implement.
 
 
+# TODO: Implement for Task 1.2.
+class Mul(ScalarFunction):
+    """Multiplication function $f(x, y) = x * y$
+
+    For education: here, we specify a class that takes adds forwards and
+    backwards functionality to common mathematical operations. Here, it is
+    multiplication. We do this because forward and backward functions
+    are needed for autodifferentiation.
+
+    NOTE: Saving values.
+
+    For Add, we do not save values during the forward pass.
+    This is because add is a linear operation, and its derivatives are very
+    simple.
+
+    Take the derivative of $f(x, y) = x + y$ with respect to $x$ and $y$.
+
+    The partial derivative, $\frac{\partial f}{\partial x} = 1$ regardless
+    of if its wrt $x$ or $y$.
+
+    However, for multiplication, the derivative is not as simple.
+
+    Take the derivative of $f(x, y) = x * y$ with respect to $x$ and $y$.
+
+    The partial derivative wrt $x$ is $y$ and wrt $y$ is $x$. Therefore,
+    in order to compute the partial derivatives, we need the values of
+    $x$ and $y$. For efficiency, we save these values during the forward pass.
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        ctx.save_for_backward(a, b)
+        c = a * b
+        return c
+
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        a, b = ctx.saved_values
+
+        # explicitly return the derivatives wrt a and b
+        return b * d_output, a * d_output
+
+
+class Inv(ScalarFunction):
+    """Inverse function $f(x) = 1/x$
+
+    the derivative of $1/x$ is $-1/x^2$
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.inv(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        (a,) = ctx.saved_values
+        return operators.inv_back(a, d_output)
+
+
+class Neg(ScalarFunction):
+    """Negate function $f(x) = -x$
+
+    the derivative of -x is -1
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        return -a
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        return -d_output
+
+
+class Sigmoid(ScalarFunction):
+    """Sigmoid function $f(x) = 1 / (1 + e^{-x})$
+
+    uniquely, the derivative of sigmoid is sigmoid(x) * (1 - sigmoid(x))
+
+    Ex. https://www.geeksforgeeks.org/derivative-of-the-sigmoid-function/#
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        out = operators.sigmoid(a)
+        return out
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+
+        sigma: float = ctx.saved_values[0]
+        return sigma * (1.0 - sigma) * d_output
+
+
+class ReLU(ScalarFunction):
+    """ReLU function $f(x) = max(0, x)$
+
+    the derivative of ReLU is 1 if x > 0 and 0 otherwise
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.relu(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        (a,) = ctx.saved_values
+        return operators.relu_back(a, d_output)
+
+
+class Exp(ScalarFunction):
+    """Exponential function $f(x) = e^x$
+
+    the derivative of e^x is e^x
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.exp(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        out: float = ctx.saved_values[0]
+        return d_output * out
+
+
+class LT(ScalarFunction):
+    """Less than function $f(x, y) = x < y
+
+    the derivative of x < y is 0
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        return 1.0 if a < b else 0.0
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        # return 0.0, 0.0 because the derivative of x < y is 0,
+        # wrt x and y.
+        return 0.0, 0.0
+
+
+class EQ(ScalarFunction):
+    """Equal function $f(x, y) = x == y
+
+    the derivative of x == y is 0
+    """
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        return 1.0 if a == b else 0.0
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        # return 0.0, 0.0 because the derivative of x < y is 0,
+        # wrt x and y.
+        return 0.0, 0.0

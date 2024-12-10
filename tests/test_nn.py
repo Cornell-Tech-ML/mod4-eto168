@@ -32,7 +32,41 @@ def test_avg(t: Tensor) -> None:
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    # raise NotImplementedError("Need to implement for Task 4.4")
+
+    # run max on each dimension
+    out_dim0 = minitorch.nn.max(t, 0)
+    out_dim1 = minitorch.nn.max(t, 1)
+    out_dim2 = minitorch.nn.max(t, 2)
+
+    print(out_dim0.shape)
+
+    # Check it matches expectations:
+    # here, we use logic from test_max_pool
+
+    # check for dimension 0, 1, and then 2
+    # that is, take the max value in each dimension, then sure our max()
+    # function gets the same value
+    assert out_dim0[0, 0, 0] == max([t[i, 0, 0] for i in range(t.shape[0])])
+    assert out_dim1[0, 0, 0] == max([t[0, i, 0] for i in range(t.shape[1])])
+    assert out_dim2[0, 0, 0] == max([t[0, 0, i] for i in range(t.shape[2])])
+
+    # test backward, as taken from test_softmax
+    # I chose to do t + minitorch.rand(t.shape) as the input
+    # because copilot told me:
+
+    # Ensuring Non-Trivial Gradients:
+
+    # If the input tensor t has trivial values (e.g., all elements are the
+    # same), the gradient might be zero or have a simple pattern.
+    # Adding noise ensures that the gradients are non-trivial and the
+    # gradient check is more meaningful.
+
+    # after the falsifying example was a tensor of all 0s when I just used
+    # t. It also failed when I tried t + 1.
+    minitorch.grad_check(
+        lambda a: minitorch.nn.max(a, dim=2), t + minitorch.rand(t.shape)
+    )
 
 
 @pytest.mark.task4_4

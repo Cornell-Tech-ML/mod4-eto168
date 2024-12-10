@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 
 def make_pts(N: int) -> List[Tuple[float, float]]:
+    """Generate N random points"""
     X = []
     for i in range(N):
         x_1 = random.random()
@@ -21,6 +22,7 @@ class Graph:
 
 
 def simple(N: int) -> Graph:
+    """Simple dataset for testing"""
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -30,6 +32,7 @@ def simple(N: int) -> Graph:
 
 
 def diag(N: int) -> Graph:
+    """Simple dataset for testing where a split is diagonal"""
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -39,6 +42,9 @@ def diag(N: int) -> Graph:
 
 
 def split(N: int) -> Graph:
+    """Simple dataset for testing where where one type of point is sandwhiched
+    between two sections of the other
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
